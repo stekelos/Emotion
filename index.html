@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Καταγραφή Συναισθημάτων</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Καταγραφή Συναισθημάτων</h1>
+    <form id="emotionForm">
+        <label for="emotion">Συναίσθημα:</label>
+        <input type="text" id="emotion" name="emotion" required>
+        <button type="submit">Καταγραφή</button>
+    </form>
+    <canvas id="emotionChart" width="400" height="400"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('emotionForm');
+            const emotionInput = document.getElementById('emotion');
+            const ctx = document.getElementById('emotionChart').getContext('2d');
+            let emotions = JSON.parse(localStorage.getItem('emotions')) || [];
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const emotion = emotionInput.value;
+                const timestamp = new Date().toLocaleTimeString();
+                emotions.push({ emotion, timestamp });
+                localStorage.setItem('emotions', JSON.stringify(emotions));
+                emotionInput.value = '';
+                updateChart();
+            });
+
+            function updateChart() {
+                const labels = emotions.map(e => e.timestamp);
+                const data = emotions.map(e => e.emotion);
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Συναισθήματα',
+                            data: data,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateChart();
+        });
+    </script>
+</body>
+</html>
