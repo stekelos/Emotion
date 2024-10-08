@@ -17,6 +17,7 @@
 
         canvas {
             border: 1px solid #000;
+            margin-bottom: 20px;
         }
 
         #resetButton {
@@ -41,7 +42,7 @@
         <button type="submit">Καταγραφή</button>
     </form>
     <button id="resetButton">Επαναφορά Μνήμης</button>
-    <canvas id="emotionChart" width="400" height="400"></canvas>
+    <div id="chartsContainer"></div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -49,7 +50,7 @@
             const emotionInput = document.getElementById('emotion');
             const scoreInput = document.getElementById('score');
             const resetButton = document.getElementById('resetButton');
-            const ctx = document.getElementById('emotionChart').getContext('2d');
+            const chartsContainer = document.getElementById('chartsContainer');
             let emotions = JSON.parse(localStorage.getItem('emotions')) || [];
             console.log('Initial emotions:', emotions);
 
@@ -63,48 +64,60 @@
                 console.log('Emotion added:', { emotion, score, timestamp });
                 emotionInput.value = '';
                 scoreInput.value = '';
-                updateChart();
+                location.reload(); // Ανανεώνει τη σελίδα
             });
 
             resetButton.addEventListener('click', () => {
                 localStorage.removeItem('emotions');
                 emotions = [];
-                updateChart();
+                updateCharts();
                 console.log('Memory reset');
             });
 
-            function updateChart() {
-                const labels = emotions.map(e => e.timestamp);
-                const data = emotions.map(e => e.score);
-                console.log('Chart data:', { labels, data });
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Συναισθήματα',
-                            data: data,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1,
-                            fill: false
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 10
+            function updateCharts() {
+                chartsContainer.innerHTML = '';
+                const emotionTypes = [...new Set(emotions.map(e => e.emotion))];
+                const colors = ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'];
+
+                emotionTypes.forEach((emotion, index) => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 400;
+                    canvas.height = 400;
+                    chartsContainer.appendChild(canvas);
+                    const ctx = canvas.getContext('2d');
+                    const data = emotions.filter(e => e.emotion === emotion).map(e => e.score);
+                    const labels = emotions.filter(e => e.emotion === emotion).map(e => e.timestamp);
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: emotion,
+                                data: data,
+                                borderColor: colors[index],
+                                borderWidth: 1,
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 10
+                                }
                             }
                         }
-                    }
+                    });
                 });
             }
 
-            updateChart();
+            updateCharts();
         });
     </script>
 </body>
 </html>
+
 
 
 
