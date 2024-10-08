@@ -35,6 +35,7 @@
             const emotionInput = document.getElementById('emotion');
             const ctx = document.getElementById('emotionChart').getContext('2d');
             let emotions = JSON.parse(localStorage.getItem('emotions')) || [];
+            console.log('Initial emotions:', emotions);
 
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -42,6 +43,7 @@
                 const timestamp = new Date().toLocaleTimeString();
                 emotions.push({ emotion, timestamp });
                 localStorage.setItem('emotions', JSON.stringify(emotions));
+                console.log('Emotion added:', { emotion, timestamp });
                 emotionInput.value = '';
                 updateChart();
             });
@@ -49,6 +51,7 @@
             function updateChart() {
                 const labels = emotions.map(e => e.timestamp);
                 const data = emotions.map(e => e.emotion);
+                console.log('Chart data:', { labels, data });
                 new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -76,3 +79,4 @@
     </script>
 </body>
 </html>
+
