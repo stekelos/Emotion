@@ -3,121 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Καταγραφή Συναισθημάτων</title>
+    <title>Daily Quote</title>
     <style>
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            transition: background-color 0.5s;
+        }
+        #quote-container {
             text-align: center;
-            margin: 20px;
+            padding: 20px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-size: 24px;
+            max-width: 80%;
         }
-
-        form {
-            margin-bottom: 20px;
-        }
-
-        canvas {
-            border: 1px solid #000;
-            margin-bottom: 20px;
-        }
-
-        #resetButton {
+        #controls {
             margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: white;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>Καταγραφή Συναισθημάτων</h1>
-    <form id="emotionForm">
-        <label for="emotion">Συναίσθημα:</label>
-        <select id="emotion" name="emotion" required>
-            <option value="Χαρά">Χαρά</option>
-            <option value="Λύπη">Λύπη</option>
-            <option value="Θυμός">Θυμός</option>
-            <option value="Φόβος">Φόβος</option>
-            <option value="Έκπληξη">Έκπληξη</option>
-            <option value="Αηδία">Αηδία</option>
+    <div id="quote-container"></div>
+    <div id="controls">
+        <select id="color-picker">
+            <option value="#FF6F61">Κόκκινο</option>
+            <option value="#6B5B95">Μωβ</option>
+            <option value="#88B04B">Πράσινο</option>
+            <option value="#F7CAC9">Ροζ</option>
+            <option value="#92A8D1">Μπλε</option>
         </select>
-        <label for="score">Σκορ:</label>
-        <input type="number" id="score" name="score" min="1" max="10" required>
-        <button type="submit">Καταγραφή</button>
-    </form>
-    <button id="resetButton">Επαναφορά Μνήμης</button>
-    <div id="chartsContainer"></div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <button onclick="skipQuote()">Skip</button>
+        <button onclick="shareQuote()">Share</button>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('emotionForm');
-            const emotionInput = document.getElementById('emotion');
-            const scoreInput = document.getElementById('score');
-            const resetButton = document.getElementById('resetButton');
-            const chartsContainer = document.getElementById('chartsContainer');
-            let emotions = JSON.parse(localStorage.getItem('emotions')) || [];
-            console.log('Initial emotions:', emotions);
+        const quotes = [
+            "Η ζωή είναι ένα μυστήριο που πρέπει να ζήσεις, όχι ένα πρόβλημα να λύσεις. - Γκάντι",
+            "Η ευτυχία δεν είναι κάτι έτοιμο. Έρχεται από τις δικές σου πράξεις. - Δαλάι Λάμα",
+            "Ο χρόνος σου είναι περιορισμένος, μην τον σπαταλάς ζώντας τη ζωή κάποιου άλλου. - Στιβ Τζομπς",
+            "Το μόνο που έχεις να φοβηθείς είναι ο ίδιος ο φόβος. - Φράνκλιν Ρούσβελτ",
+            "Η επιτυχία είναι να πηγαίνεις από αποτυχία σε αποτυχία χωρίς να χάνεις τον ενθουσιασμό σου. - Τσόρτσιλ",
+            "Μην περιμένεις την τέλεια στιγμή. Πάρε τη στιγμή και κάνε την τέλεια.",
+            "Η φαντασία είναι πιο σημαντική από τη γνώση. - Αϊνστάιν",
+            "Η αλλαγή είναι ο νόμος της ζωής. - Κένεντι",
+            "Κάθε μέρα είναι μια νέα αρχή.",
+            "Η απλότητα είναι η απόλυτη πολυτέλεια.",
+            "Η δύναμη δεν έρχεται από τη νίκη, αλλά από τον αγώνα.",
+            "Μην κρίνεις την ημέρα από τη σοδειά, αλλά από τους σπόρους που φύτεψες.",
+            "Η ζωή είναι σαν το Wi-Fi, δεν βλέπεις τη σύνδεση, αλλά πρέπει να την εμπιστευτείς.",
+            "Η ευτυχία είναι επιλογή, όχι αποτέλεσμα.",
+            "Κάνε αυτό που μπορείς, με αυτό που έχεις, εκεί που είσαι.",
+            "Η μεγαλύτερη δόξα δεν είναι να μην πέσεις ποτέ, αλλά να σηκώνεσαι κάθε φορά.",
+            "Τα όνειρα είναι ο χάρτης της ψυχής.",
+            "Μια μέρα χωρίς γέλιο είναι μια μέρα χαμένη.",
+            "Η υπομονή είναι πικρή, αλλά ο καρπός της γλυκός.",
+            "Ο κόσμος αλλάζει με το παράδειγμά σου, όχι με τη γνώμη σου.",
+            "Η ομορφιά βρίσκεται στα μάτια αυτού που βλέπει.",
+            "Η αρχή είναι το ήμισυ του παντός. - Αριστοτέλης",
+            "Μην αφήνεις το χθες να καταστρέψει το σήμερα.",
+            "Η γνώση είναι δύναμη, αλλά η σοφία είναι ελευθερία.",
+            "Η ζωή είναι σύντομη, κάνε την αξέχαστη.",
+            "Κάθε ταξίδι αρχίζει με ένα βήμα.",
+            "Η αληθινή δύναμη είναι να ελέγχεις τον εαυτό σου.",
+            "Η ελπίδα είναι το όνειρο του ξύπνιου.",
+            "Μην ψάχνεις για το τέλειο, ψάξε για το αληθινό.",
+            "Η τέχνη της ζωής είναι να ζεις με λιγότερα παράπονα.",
+            "Ό,τι δεν σε σκοτώνει, σε κάνει πιο δυνατό. - Νίτσε",
+            "Η ευτυχία είναι να δίνεις περισσότερα από όσα παίρνεις.",
+            "Η σιωπή είναι η πιο δυνατή φωνή.",
+            "Μην ακολουθείς το μονοπάτι, χάραξε το δικό σου.",
+            "Η ζωή είναι ένα παιχνίδι, παίξε το καλά.",
+            "Ο φόβος είναι ο εχθρός της προόδου.",
+            "Η αλήθεια λάμπει πιο δυνατά από το ψέμα.",
+            "Κάθε τέλος είναι μια νέα αρχή.",
+            "Η αγάπη είναι το μόνο που πολλαπλασιάζεται όταν το μοιράζεσαι.",
+            "Η δουλειά σου είναι να ανακαλύψεις τον κόσμο σου και μετά να τον δώσεις όλο σου τον εαυτό.",
+            "Η ζωή είναι σαν καθρέφτης, σου χαμογελάει αν της χαμογελάσεις.",
+            "Μην μετράς τις μέρες, κάνε τις μέρες να μετράνε.",
+            "Η επιτυχία είναι το άθροισμα μικρών προσπαθειών.",
+            "Η ευγνωμοσύνη μετατρέπει ό,τι έχουμε σε αρκετό.",
+            "Η δημιουργικότητα είναι η νοημοσύνη που διασκεδάζει.",
+            "Μην περιμένεις ευκαιρίες, δημιούργησέ τες.",
+            "Η ζωή είναι ένα βιβλίο, γράψε την ιστορία σου.",
+            "Η δύναμη της θέλησης κινεί βουνά.",
+            "Η αισιοδοξία είναι ο μαγνήτης της ευτυχίας.",
+            "Κάνε το σήμερα τόσο όμορφο που να αξίζει να το θυμάσαι."
+        ];
 
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const emotion = emotionInput.value;
-                const score = scoreInput.value;
-                const timestamp = new Date().toLocaleTimeString();
-                emotions.push({ emotion, score, timestamp });
-                localStorage.setItem('emotions', JSON.stringify(emotions));
-                console.log('Emotion added:', { emotion, score, timestamp });
-                emotionInput.value = '';
-                scoreInput.value = '';
-                location.reload(); // Ανανεώνει τη σελίδα
-            });
+        let currentQuoteIndex = Math.floor(Math.random() * quotes.length);
 
-            resetButton.addEventListener('click', () => {
-                localStorage.removeItem('emotions');
-                emotions = [];
-                updateCharts();
-                console.log('Memory reset');
-            });
+        function displayQuote() {
+            const quoteContainer = document.getElementById("quote-container");
+            quoteContainer.textContent = quotes[currentQuoteIndex];
+        }
 
-            function updateCharts() {
-                chartsContainer.innerHTML = '';
-                const emotionTypes = [...new Set(emotions.map(e => e.emotion))];
-                const colors = ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'];
+        function skipQuote() {
+            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+            displayQuote();
+        }
 
-                emotionTypes.forEach((emotion, index) => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 400;
-                    canvas.height = 400;
-                    chartsContainer.appendChild(canvas);
-                    const ctx = canvas.getContext('2d');
-                    const data = emotions.filter(e => e.emotion === emotion).map(e => e.score);
-                    const labels = emotions.filter(e => e.emotion === emotion).map(e => e.timestamp);
-
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: emotion,
-                                data: data,
-                                borderColor: colors[index],
-                                borderWidth: 1,
-                                fill: false
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 10
-                                }
-                            }
-                        }
-                    });
-                });
+        function shareQuote() {
+            const quote = quotes[currentQuoteIndex];
+            const color = document.getElementById("color-picker").value;
+            const text = `${quote} - Daily Quote`;
+            if (navigator.share) {
+                navigator.share({
+                    title: "Daily Quote",
+                    text: text,
+                    url: window.location.href
+                }).catch(err => console.log("Share failed:", err));
+            } else {
+                alert("Copied to clipboard: " + text);
+                navigator.clipboard.writeText(text);
             }
+        }
 
-            updateCharts();
+        document.getElementById("color-picker").addEventListener("change", function() {
+            document.body.style.backgroundColor = this.value;
         });
+
+        // Initial setup
+        document.body.style.backgroundColor = document.getElementById("color-picker").value;
+        displayQuote();
     </script>
 </body>
 </html>
-
-
-
-
