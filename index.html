@@ -44,6 +44,9 @@
             font-size: 16px;
             margin: 5px;
         }
+        canvas {
+            display: none; /* Κρύβουμε το canvas από την οθόνη */
+        }
     </style>
 </head>
 <body>
@@ -57,8 +60,9 @@
             <option value="#92A8D1">Μπλε</option>
         </select>
         <button onclick="skipQuote()">Skip</button>
-        <button onclick="shareQuote()">Share</button>
+        <button onclick="shareQuoteAsImage()">Share as Photo</button>
     </div>
+    <canvas id="quote-canvas" width="600" height="400"></canvas>
 
     <script>
         const quotes = [
@@ -126,20 +130,64 @@
             displayQuote();
         }
 
-        function shareQuote() {
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(" ");
+            let line = "";
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + " ";
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    context.fillText(line, x, y);
+                    line = words[n] + " ";
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            context.fillText(line, x, y);
+        }
+
+        function shareQuoteAsImage() {
+            const canvas = document.getElementById("quote-canvas");
+            const ctx = canvas.getContext("2d");
             const quote = quotes[currentQuoteIndex];
             const color = document.getElementById("color-picker").value;
-            const text = `${quote} - Daily Quote`;
-            if (navigator.share) {
-                navigator.share({
-                    title: "Daily Quote",
-                    text: text,
-                    url: window.location.href
-                }).catch(err => console.log("Share failed:", err));
-            } else {
-                alert("Copied to clipboard: " + text);
-                navigator.clipboard.writeText(text);
-            }
+
+            // Στήσιμο του canvas
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Κείμενο quote
+            ctx.fillStyle = "white";
+            ctx.font = "30px Arial";
+            ctx.textAlign = "center";
+            wrapText(ctx, quote, canvas.width / 2, 100, canvas.width - 40, 40);
+
+            // Λογότυπο "stef" κάτω αριστερά
+            ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+            ctx.font = "20px Arial";
+            ctx.textAlign = "left";
+            ctx.fillText("stef", 10, canvas.height - 10);
+
+            // Μετατροπή σε Blob και κοινή χρήση
+            canvas.toBlob(blob => {
+                const file = new File([blob], "quote.png", { type: "image/png" });
+                if (navigator.share) {
+                    navigator.share({
+                        files: [file],
+                        title: "Daily Quote",
+                        text: "Check out this quote!"
+                    }).catch(err => console.log("Share failed:", err));
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "quote.png";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            }, "image/png");
         }
 
         document.getElementById("color-picker").addEventListener("change", function() {
